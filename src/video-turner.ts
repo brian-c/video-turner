@@ -1,35 +1,45 @@
 class VideoTurner extends HTMLElement {
 	get video() {
-		const video = this.querySelector('video');
-		if (!video) throw new Error('No video in VideoTurner');
-		return video;
+		return this.querySelector('video');
 	}
 
 	get range() {
-		const [start = 0, end = 0] = (this.getAttribute('range') ?? '').split(',').map(parseFloat);
+		const rangeAttr = this.getAttribute('range') ?? '';
+		const [start = 0, end = this.video?.duration ?? 0] = rangeAttr.split(',').map(parseFloat);
 		return { start, end } as const;
 	}
 
 	connectedCallback() {
 		this.addEventListener('pointerdown', this);
+		this.addEventListener('wheel', this);
 	}
 
 	disconnectedCallback() {
 		this.removeEventListener('pointerdown', this);
+		this.removeEventListener('wheel', this);
 	}
 
 	handleEvent(event: PointerEvent) {
+		if (!this.video) return;
+
 		if (event.type === 'pointerdown') {
 			addEventListener('pointermove', this);
 			addEventListener('pointerup', this);
 		}
 
-		if (event.type === 'pointermove') {
+		if (event.type === 'pointermove' || event.type === 'wheel') {
+			event.preventDefault();
+
 			const { start, end } = this.range;
 			const duration = end - start;
 			const ccw = Math.sign(duration) * -1;
 
-			const change = event.movementX / this.video.clientWidth / 2;
+			let movement = event.movementX;
+			if (event instanceof WheelEvent) {
+				movement = event.deltaX * -1;
+			}
+
+			const change = movement / this.video.clientWidth / 2;
 			const durationChange = duration * change * ccw;
 
 			const newTime = this.video.currentTime + durationChange;
