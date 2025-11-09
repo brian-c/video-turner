@@ -6,7 +6,7 @@ class VideoTurner extends HTMLElement {
 	get range() {
 		const rangeAttr = this.getAttribute('range') ?? '';
 		const [start = 0, end = this.video?.duration ?? 0] = rangeAttr.split(',').map(parseFloat);
-		return { start, end } as const;
+		return { start, end };
 	}
 
 	connectedCallback() {
@@ -19,7 +19,10 @@ class VideoTurner extends HTMLElement {
 		this.removeEventListener('wheel', this);
 	}
 
-	handleEvent(event: PointerEvent) {
+	/**
+	 * @param {PointerEvent} event
+	 */
+	handleEvent(event) {
 		if (!this.video) return;
 
 		if (event.type === 'pointerdown') {
@@ -32,7 +35,7 @@ class VideoTurner extends HTMLElement {
 
 			const { start, end } = this.range;
 			const duration = end - start;
-			const ccw = Math.sign(duration) * -1;
+			const ccw = duration < 0 ? 1 : -1;
 
 			let movement = event.movementX;
 			if (event instanceof WheelEvent) {
@@ -56,7 +59,11 @@ class VideoTurner extends HTMLElement {
 	}
 }
 
-function mod(a: number, n: number) {
+/**
+ * @param {number} a
+ * @param {number} n
+ */
+function mod(a, n) {
 	return ((a % n) + n) % n;
 }
 
